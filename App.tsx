@@ -4,6 +4,7 @@ import { Layout } from './components/Layout';
 import { Home } from './pages/Home';
 import { CollectionForm } from './pages/CollectionForm';
 import { FeedbackForm } from './pages/FeedbackForm';
+import { ServiceReport } from './pages/ServiceReport';
 import { AdminDashboard } from './pages/admin/AdminDashboard';
 import { AdminStatsInput } from './pages/admin/AdminStatsInput';
 import { AdminRequests } from './pages/admin/AdminRequests';
@@ -15,8 +16,23 @@ const App: React.FC = () => {
   const [currentPage, setCurrentPage] = useState<string>('home');
   const [isAdmin, setIsAdmin] = useState<boolean>(false);
   const [activeNotification, setActiveNotification] = useState<EmailSimulation | null>(null);
+  
+  const [theme, setTheme] = useState<'light' | 'dark'>(() => {
+    const saved = localStorage.getItem('app_theme');
+    return (saved as 'light' | 'dark') || 'light';
+  });
 
-  // Local Storage Mock Persistence
+  useEffect(() => {
+    localStorage.setItem('app_theme', theme);
+    if (theme === 'dark') {
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+    }
+  }, [theme]);
+
+  const toggleTheme = () => setTheme(prev => prev === 'light' ? 'dark' : 'light');
+
   const [stats, setStats] = useState<ServiceStats[]>(() => {
     const saved = localStorage.getItem('library_stats');
     return saved ? JSON.parse(saved) : [];
@@ -53,10 +69,8 @@ const App: React.FC = () => {
     const request = requests.find(r => r.id === id);
     if (!request) return;
 
-    // 1. Update the state
     setRequests(requests.map(r => r.id === id ? { ...r, status } : r));
 
-    // 2. Prepare email simulation
     const simulation: EmailSimulation = {
       to: request.email || 'pemustaka@example.com',
       subject: `Update Pengajuan Koleksi: ${request.title}`,
@@ -66,7 +80,6 @@ const App: React.FC = () => {
         : `Halo ${request.email.split('@')[0]},\n\nKami telah meninjau pengajuan koleksi Anda untuk judul "${request.title}".\n\nMohon maaf, saat ini pengajuan tersebut BELUM DAPAT KAMI PROSES karena keterbatasan anggaran atau kesesuaian dengan kebijakan koleksi saat ini.\n\nTetap berikan saran koleksi lainnya di masa mendatang.`
     };
 
-    // 3. Trigger modal
     setActiveNotification(simulation);
   };
 
@@ -74,21 +87,20 @@ const App: React.FC = () => {
     switch (currentPage) {
       case 'home':
         return <Home onNavigate={navigate} />;
+      case 'service-report':
+        return <ServiceReport stats={stats} isDark={theme === 'dark'} />;
       case 'form-koleksi':
         return <CollectionForm onSubmit={(data) => setRequests([...requests, data])} onBack={() => navigate('home')} />;
       case 'form-saran':
         return <FeedbackForm onSubmit={(data) => setFeedbacks([...feedbacks, data])} onBack={() => navigate('home')} />;
-      
-      // Admin Pages
       case 'admin-dashboard':
-        return <AdminDashboard stats={stats} requests={requests} feedbacks={feedbacks} />;
+        return <AdminDashboard stats={stats} requests={requests} feedbacks={feedbacks} isDark={theme === 'dark'} />;
       case 'admin-stats':
         return <AdminStatsInput onSubmit={(data) => setStats([...stats, data])} />;
       case 'admin-requests':
         return <AdminRequests requests={requests} onUpdate={handleUpdateRequestStatus} />;
       case 'admin-feedback':
         return <AdminFeedback feedbacks={feedbacks} />;
-      
       default:
         return <Home onNavigate={navigate} />;
     }
@@ -104,6 +116,8 @@ const App: React.FC = () => {
         if (!isAdmin) navigate('admin-dashboard');
         else navigate('home');
       }}
+      theme={theme}
+      onToggleTheme={toggleTheme}
     >
       {renderContent()}
       <EmailSimulationModal 
