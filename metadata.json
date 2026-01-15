@@ -1,0 +1,5 @@
+{
+  "name": "SIPELAP - Sistem Pelaporan & Layanan Perpustakaan",
+  "description": "Platform terintegrasi untuk pelaporan layanan perpustakaan, pengajuan koleksi, dan manajemen saran pemustaka dengan dashboard admin yang komprehensif.",
+  "requestFramePermissions": []
+}
