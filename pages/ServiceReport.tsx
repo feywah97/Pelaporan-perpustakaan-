@@ -1,8 +1,8 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { 
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
-  BarChart, Bar, Legend, LineChart, Line
+  BarChart, Bar, Legend, PieChart, Pie, Cell
 } from 'recharts';
 import { ServiceStats } from '../types';
 
@@ -12,6 +12,7 @@ interface ServiceReportProps {
 }
 
 export const ServiceReport: React.FC<ServiceReportProps> = ({ stats, isDark }) => {
+  const [expandedRowId, setExpandedRowId] = useState<string | null>(null);
   const sortedStats = [...stats].sort((a, b) => a.timestamp - b.timestamp);
   const latestData = sortedStats.length > 0 ? sortedStats[sortedStats.length - 1] : null;
   
@@ -19,6 +20,10 @@ export const ServiceReport: React.FC<ServiceReportProps> = ({ stats, isDark }) =
   const gridColor = isDark ? '#1e293b' : '#f1f5f9';
 
   const totalKunjungan = stats.reduce((a, b) => a + b.onlineVisits + b.offlineVisits, 0);
+
+  const toggleRow = (id: string) => {
+    setExpandedRowId(expandedRowId === id ? null : id);
+  };
 
   return (
     <div className="max-w-6xl mx-auto space-y-12 animate-in fade-in duration-700">
@@ -90,7 +95,7 @@ export const ServiceReport: React.FC<ServiceReportProps> = ({ stats, isDark }) =
           </div>
         </div>
 
-        {/* Collection Growth */}
+        {/* Repository Activity */}
         <div className="bg-white dark:bg-slate-900 p-8 rounded-[2.5rem] border border-slate-100 dark:border-slate-800 shadow-sm">
           <div className="mb-8">
             <h3 className="text-xl font-bold text-slate-900 dark:text-white">Aktivitas Repository Digital</h3>
@@ -124,7 +129,7 @@ export const ServiceReport: React.FC<ServiceReportProps> = ({ stats, isDark }) =
       <div className="bg-white dark:bg-slate-900 rounded-[2.5rem] border border-slate-100 dark:border-slate-800 shadow-sm overflow-hidden">
         <div className="p-8 border-b border-slate-50 dark:border-slate-800">
           <h3 className="text-lg font-bold text-slate-800 dark:text-white">Rincian Laporan Bulanan</h3>
-          <p className="text-xs text-slate-400 mt-1">Data tabular untuk analisis lebih mendalam.</p>
+          <p className="text-xs text-slate-400 mt-1">Klik pada baris untuk melihat rincian aktivitas mendalam.</p>
         </div>
         <div className="overflow-x-auto">
           <table className="w-full text-left">
@@ -134,36 +139,105 @@ export const ServiceReport: React.FC<ServiceReportProps> = ({ stats, isDark }) =
                 <th className="px-8 py-5">Kunjungan (OFF/ON)</th>
                 <th className="px-8 py-5">Koleksi Baru</th>
                 <th className="px-8 py-5">Repo Download</th>
+                <th className="px-8 py-5 text-right pr-12">Detail</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
               {stats.slice().reverse().map(s => (
-                <tr key={s.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-colors">
-                  <td className="px-8 py-6">
-                    <span className="font-bold text-slate-700 dark:text-slate-200">{s.month}</span>
-                    <span className="ml-2 text-slate-400 dark:text-slate-500">{s.year}</span>
-                  </td>
-                  <td className="px-8 py-6">
-                    <div className="flex items-center space-x-2 text-sm">
-                      <span className="text-slate-500 dark:text-slate-400">{s.offlineVisits}</span>
-                      <span className="text-slate-200">/</span>
-                      <span className="text-emerald-600 dark:text-emerald-400 font-bold">{s.onlineVisits}</span>
-                    </div>
-                  </td>
-                  <td className="px-8 py-6">
-                    <span className="bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 px-3 py-1 rounded-full text-xs font-bold">+{s.collectionsAdded}</span>
-                  </td>
-                  <td className="px-8 py-6">
-                    <div className="flex items-center space-x-1.5 font-bold text-slate-700 dark:text-slate-300">
-                      <span>{s.repoDownloads}</span>
-                      <span className="text-[10px] text-slate-400 uppercase font-medium tracking-tighter">Kali</span>
-                    </div>
-                  </td>
-                </tr>
+                <React.Fragment key={s.id}>
+                  <tr 
+                    onClick={() => toggleRow(s.id)}
+                    className={`hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-all cursor-pointer group ${expandedRowId === s.id ? 'bg-slate-50/80 dark:bg-slate-800/50' : ''}`}
+                  >
+                    <td className="px-8 py-6">
+                      <span className="font-bold text-slate-700 dark:text-slate-200">{s.month}</span>
+                      <span className="ml-2 text-slate-400 dark:text-slate-500">{s.year}</span>
+                    </td>
+                    <td className="px-8 py-6">
+                      <div className="flex items-center space-x-2 text-sm">
+                        <span className="text-slate-500 dark:text-slate-400">{s.offlineVisits}</span>
+                        <span className="text-slate-200">/</span>
+                        <span className="text-emerald-600 dark:text-emerald-400 font-bold">{s.onlineVisits}</span>
+                      </div>
+                    </td>
+                    <td className="px-8 py-6">
+                      <span className="bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 px-3 py-1 rounded-full text-xs font-bold">+{s.collectionsAdded}</span>
+                    </td>
+                    <td className="px-8 py-6">
+                      <div className="flex items-center space-x-1.5 font-bold text-slate-700 dark:text-slate-300">
+                        <span>{s.repoDownloads}</span>
+                        <span className="text-[10px] text-slate-400 uppercase font-medium tracking-tighter">Kali</span>
+                      </div>
+                    </td>
+                    <td className="px-8 py-6 text-right pr-12">
+                      <span className={`inline-block transition-transform duration-300 ${expandedRowId === s.id ? 'rotate-180' : ''}`}>
+                        ▼
+                      </span>
+                    </td>
+                  </tr>
+                  {expandedRowId === s.id && (
+                    <tr className="bg-slate-50/30 dark:bg-slate-900/40 animate-in slide-in-from-top-1 duration-300">
+                      <td colSpan={5} className="px-8 py-10">
+                        <div className="grid md:grid-cols-3 gap-8">
+                          {/* Breakdown Kunjungan */}
+                          <div className="space-y-4">
+                            <h4 className="text-[10px] font-black uppercase text-slate-400 tracking-widest">Rasio Kunjungan</h4>
+                            <div className="flex items-end space-x-2">
+                              <div className="flex-1 bg-slate-100 dark:bg-slate-800 h-2 rounded-full overflow-hidden flex">
+                                <div 
+                                  className="bg-emerald-500 h-full" 
+                                  style={{ width: `${(s.onlineVisits / (s.onlineVisits + s.offlineVisits || 1)) * 100}%` }}
+                                ></div>
+                              </div>
+                            </div>
+                            <div className="flex justify-between text-xs">
+                              <span className="text-emerald-600 font-bold">Online ({Math.round((s.onlineVisits / (s.onlineVisits + s.offlineVisits || 1)) * 100)}%)</span>
+                              <span className="text-slate-400">Offline ({Math.round((s.offlineVisits / (s.onlineVisits + s.offlineVisits || 1)) * 100)}%)</span>
+                            </div>
+                          </div>
+
+                          {/* Detail Repository */}
+                          <div className="space-y-4">
+                            <h4 className="text-[10px] font-black uppercase text-slate-400 tracking-widest">Aktivitas Repository</h4>
+                            <div className="flex items-center space-x-4">
+                              <div className="flex-1 p-3 bg-blue-50 dark:bg-blue-900/10 rounded-2xl">
+                                <p className="text-[10px] font-bold text-blue-400 uppercase">Conversion</p>
+                                <p className="text-lg font-black text-blue-700 dark:text-blue-300">
+                                  {((s.repoDownloads / (s.repoVisits || 1)) * 100).toFixed(1)}%
+                                </p>
+                              </div>
+                              <div className="flex-1 p-3 bg-amber-50 dark:bg-amber-900/10 rounded-2xl">
+                                <p className="text-[10px] font-bold text-amber-500 uppercase">Total Akses</p>
+                                <p className="text-lg font-black text-amber-700 dark:text-amber-300">
+                                  {s.repoVisits + s.repoDownloads}
+                                </p>
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* Insight Singkat */}
+                          <div className="space-y-4">
+                            <h4 className="text-[10px] font-black uppercase text-slate-400 tracking-widest">Status Koleksi</h4>
+                            <div className="flex items-center space-x-3">
+                              <div className="w-10 h-10 bg-slate-100 dark:bg-slate-800 rounded-xl flex items-center justify-center text-xl">
+                                {s.collectionsAdded > 5 ? '🚀' : '📖'}
+                              </div>
+                              <p className="text-xs text-slate-500 leading-relaxed italic">
+                                {s.collectionsAdded > 0 
+                                  ? `Penambahan ${s.collectionsAdded} koleksi baru di bulan ${s.month} untuk memperkaya literasi perpustakaan.` 
+                                  : "Fokus pemeliharaan koleksi yang ada dan penguatan sistem layanan digital."}
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+                      </td>
+                    </tr>
+                  )}
+                </React.Fragment>
               ))}
               {stats.length === 0 && (
                 <tr>
-                  <td colSpan={4} className="px-8 py-20 text-center text-slate-300 dark:text-slate-700 italic">Data rincian belum tersedia.</td>
+                  <td colSpan={5} className="px-8 py-20 text-center text-slate-300 dark:text-slate-700 italic">Data rincian belum tersedia.</td>
                 </tr>
               )}
             </tbody>
