@@ -20,7 +20,7 @@ export interface CollectionRequest {
   year: number;
   quantity: number;
   reason: string;
-  email: string; // Added for notification
+  email: string;
   status: 'pending' | 'approved' | 'rejected';
   date: string;
 }
@@ -34,7 +34,11 @@ export interface UserFeedback {
   date: string;
 }
 
-export type ViewType = 'user' | 'admin';
+export interface ToastMessage {
+  id: string;
+  message: string;
+  type: 'success' | 'error' | 'info';
+}
 
 export interface EmailSimulation {
   to: string;

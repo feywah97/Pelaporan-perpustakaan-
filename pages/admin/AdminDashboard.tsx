@@ -16,6 +16,7 @@ interface DashboardProps {
 export const AdminDashboard: React.FC<DashboardProps> = ({ stats, requests, feedbacks, isDark }) => {
   const sortedStats = [...stats].sort((a, b) => b.timestamp - a.timestamp).slice(0, 6).reverse();
 
+  // Calculate status counts for Pie Chart
   const statusCounts = requests.reduce((acc, curr) => {
     acc[curr.status] = (acc[curr.status] || 0) + 1;
     return acc;
@@ -26,6 +27,19 @@ export const AdminDashboard: React.FC<DashboardProps> = ({ stats, requests, feed
     { name: 'Disetujui', value: statusCounts.approved, color: '#10b981' }, 
     { name: 'Ditolak', value: statusCounts.rejected, color: '#f43f5e' },
   ].filter(item => item.value > 0);
+
+  // Calculate Top 5 Most Requested Collections
+  const topRequests = requests.reduce((acc, curr) => {
+    const existing = acc.find(item => item.title.toLowerCase() === curr.title.toLowerCase());
+    if (existing) {
+      existing.totalQuantity += curr.quantity;
+    } else {
+      acc.push({ title: curr.title, totalQuantity: curr.quantity });
+    }
+    return acc;
+  }, [] as { title: string; totalQuantity: number }[])
+  .sort((a, b) => b.totalQuantity - a.totalQuantity)
+  .slice(0, 5);
 
   const labelColor = isDark ? '#94a3b8' : '#64748b';
   const gridColor = isDark ? '#1e293b' : '#f1f5f9';
@@ -73,33 +87,65 @@ export const AdminDashboard: React.FC<DashboardProps> = ({ stats, requests, feed
           </div>
         </div>
 
-        {/* Status Breakdown */}
-        <div className="bg-white dark:bg-slate-900 p-8 rounded-[2rem] border border-slate-100 dark:border-slate-800 shadow-sm">
-          <h3 className="font-bold text-slate-800 dark:text-slate-100 mb-8">Status Pengajuan</h3>
-          <div className="h-[240px] relative">
-            <ResponsiveContainer width="100%" height="100%">
-              <PieChart>
-                <Pie data={statusData} innerRadius={70} outerRadius={90} paddingAngle={8} dataKey="value">
-                  {statusData.map((entry, index) => <Cell key={index} fill={entry.color} strokeWidth={0} />)}
-                </Pie>
-                <Tooltip />
-              </PieChart>
-            </ResponsiveContainer>
-            <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-              <span className="text-3xl font-black text-slate-800 dark:text-slate-100">{requests.length}</span>
-              <span className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase">Total</span>
+        {/* Right Sidebar Area */}
+        <div className="space-y-8">
+          {/* Status Breakdown */}
+          <div className="bg-white dark:bg-slate-900 p-8 rounded-[2rem] border border-slate-100 dark:border-slate-800 shadow-sm">
+            <h3 className="font-bold text-slate-800 dark:text-slate-100 mb-8">Status Pengajuan</h3>
+            <div className="h-[240px] relative">
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Pie data={statusData} innerRadius={70} outerRadius={90} paddingAngle={8} dataKey="value">
+                    {statusData.map((entry, index) => <Cell key={index} fill={entry.color} strokeWidth={0} />)}
+                  </Pie>
+                  <Tooltip />
+                </PieChart>
+              </ResponsiveContainer>
+              <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+                <span className="text-3xl font-black text-slate-800 dark:text-slate-100">{requests.length}</span>
+                <span className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase">Total</span>
+              </div>
+            </div>
+            <div className="mt-6 space-y-3">
+              {statusData.map(s => (
+                <div key={s.name} className="flex items-center justify-between">
+                  <div className="flex items-center space-x-2">
+                    <div className="w-2 h-2 rounded-full" style={{backgroundColor: s.color}}></div>
+                    <span className="text-xs font-medium text-slate-500 dark:text-slate-400">{s.name}</span>
+                  </div>
+                  <span className="text-xs font-bold text-slate-800 dark:text-slate-200">{s.value}</span>
+                </div>
+              ))}
             </div>
           </div>
-          <div className="mt-6 space-y-3">
-             {statusData.map(s => (
-               <div key={s.name} className="flex items-center justify-between">
-                 <div className="flex items-center space-x-2">
-                   <div className="w-2 h-2 rounded-full" style={{backgroundColor: s.color}}></div>
-                   <span className="text-xs font-medium text-slate-500 dark:text-slate-400">{s.name}</span>
-                 </div>
-                 <span className="text-xs font-bold text-slate-800 dark:text-slate-200">{s.value}</span>
-               </div>
-             ))}
+
+          {/* Top Requested Collections */}
+          <div className="bg-white dark:bg-slate-900 p-8 rounded-[2rem] border border-slate-100 dark:border-slate-800 shadow-sm">
+            <div className="flex items-center justify-between mb-6">
+              <h3 className="font-bold text-slate-800 dark:text-slate-100">Koleksi Paling Diminati</h3>
+              <span className="text-[10px] font-bold text-amber-500 bg-amber-50 dark:bg-amber-900/20 px-2 py-1 rounded-lg uppercase">Top 5</span>
+            </div>
+            <div className="space-y-5">
+              {topRequests.map((req, idx) => (
+                <div key={idx} className="flex items-center justify-between group">
+                  <div className="flex items-center space-x-3 overflow-hidden">
+                    <div className="w-8 h-8 rounded-xl bg-slate-50 dark:bg-slate-800 flex items-center justify-center text-xs font-black text-slate-400 shrink-0">
+                      {idx + 1}
+                    </div>
+                    <p className="text-xs font-bold text-slate-700 dark:text-slate-200 truncate pr-2" title={req.title}>
+                      {req.title}
+                    </p>
+                  </div>
+                  <div className="flex items-center space-x-1 shrink-0">
+                    <span className="text-xs font-black text-emerald-600 dark:text-emerald-400">{req.totalQuantity}</span>
+                    <span className="text-[10px] font-bold text-slate-400 uppercase">Eks.</span>
+                  </div>
+                </div>
+              ))}
+              {topRequests.length === 0 && (
+                <p className="text-xs text-slate-400 italic text-center py-4">Belum ada data pengajuan.</p>
+              )}
+            </div>
           </div>
         </div>
       </div>

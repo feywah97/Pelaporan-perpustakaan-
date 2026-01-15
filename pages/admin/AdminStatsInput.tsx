@@ -19,8 +19,6 @@ export const AdminStatsInput: React.FC<AdminStatsInputProps> = ({ onSubmit }) =>
     repoDownloads: 0
   });
 
-  const [message, setMessage] = useState('');
-
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     const newData: ServiceStats = {
@@ -29,94 +27,111 @@ export const AdminStatsInput: React.FC<AdminStatsInputProps> = ({ onSubmit }) =>
       timestamp: new Date(`${formData.month} 1, ${formData.year}`).getTime()
     };
     onSubmit(newData);
-    setMessage('✅ Data statistik berhasil tersimpan');
-    setTimeout(() => setMessage(''), 3000);
+    // Reset form for next entry but keep month/year for convenience
+    setFormData({
+      ...formData,
+      onlineVisits: 0,
+      offlineVisits: 0,
+      collectionsAdded: 0,
+      repoVisits: 0,
+      repoDownloads: 0
+    });
   };
 
   return (
-    <div className="max-w-3xl mx-auto animate-in fade-in slide-in-from-bottom-4 duration-700">
-      <div className="bg-white rounded-[2.5rem] p-10 lg:p-14 shadow-sm border border-slate-100">
-        <div className="mb-10 text-center">
-          <h2 className="text-3xl font-black text-slate-900">Rekapitulasi Layanan</h2>
-          <p className="text-slate-500 mt-2">Input akumulasi data performa perpustakaan per periode.</p>
+    <div className="max-w-4xl mx-auto animate-in fade-in slide-in-from-bottom-10 duration-700">
+      <div className="bg-white dark:bg-slate-900 rounded-[3rem] p-10 lg:p-14 shadow-2xl border border-slate-100 dark:border-white/5">
+        <div className="mb-12 text-center">
+          <div className="w-20 h-20 bg-emerald-100 dark:bg-emerald-900/30 rounded-[2rem] flex items-center justify-center text-3xl mx-auto mb-6">📝</div>
+          <h2 className="text-3xl font-black text-slate-900 dark:text-white tracking-tight">Input Capaian Layanan</h2>
+          <p className="text-slate-500 dark:text-slate-400 mt-2 font-medium">Lengkapi rekapitulasi performa bulanan dengan presisi.</p>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-10">
-          {/* Periode Selection */}
-          <div className="grid grid-cols-2 gap-6 p-8 bg-slate-50 rounded-[2rem]">
-            <div className="space-y-2">
-              <label className="text-[10px] font-black uppercase text-slate-400 tracking-widest">Pilih Bulan</label>
+        <form onSubmit={handleSubmit} className="space-y-12">
+          {/* Periode Section */}
+          <div className="grid md:grid-cols-2 gap-8 p-10 bg-slate-50 dark:bg-slate-800/50 rounded-[2.5rem] border border-slate-100 dark:border-white/5">
+            <div className="space-y-3">
+              <label className="text-[10px] font-black uppercase text-slate-400 tracking-[0.2em] ml-2">Pilih Bulan Laporan</label>
               <select 
-                className="w-full px-5 py-3.5 bg-white border border-slate-200 rounded-2xl outline-none focus:ring-4 focus:ring-emerald-500/10 focus:border-emerald-500 transition-all font-bold text-slate-700"
+                className="w-full px-6 py-4 bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/10 rounded-2xl outline-none focus:ring-4 focus:ring-emerald-500/10 focus:border-emerald-500 transition-all font-bold text-slate-700 dark:text-slate-200 cursor-pointer"
                 value={formData.month}
                 onChange={e => setFormData({...formData, month: e.target.value})}
               >
                 {months.map(m => <option key={m} value={m}>{m}</option>)}
               </select>
             </div>
-            <div className="space-y-2">
-              <label className="text-[10px] font-black uppercase text-slate-400 tracking-widest">Tahun</label>
+            <div className="space-y-3">
+              <label className="text-[10px] font-black uppercase text-slate-400 tracking-[0.2em] ml-2">Tahun Anggaran</label>
               <input 
                 type="number"
-                className="w-full px-5 py-3.5 bg-white border border-slate-200 rounded-2xl outline-none focus:ring-4 focus:ring-emerald-500/10 focus:border-emerald-500 transition-all font-bold text-slate-700"
+                className="w-full px-6 py-4 bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/10 rounded-2xl outline-none focus:ring-4 focus:ring-emerald-500/10 focus:border-emerald-500 transition-all font-bold text-slate-700 dark:text-slate-200"
                 value={formData.year}
                 onChange={e => setFormData({...formData, year: parseInt(e.target.value)})}
               />
             </div>
           </div>
 
-          {/* Metrics Groups */}
-          <div className="space-y-8">
-            <FormSection title="Data Kunjungan Pemustaka" icon="👥" color="text-blue-600">
-              <div className="grid sm:grid-cols-2 gap-6">
-                <InputField label="Kunjungan Online" value={formData.onlineVisits} onChange={v => setFormData({...formData, onlineVisits: v})} />
-                <InputField label="Kunjungan Offline" value={formData.offlineVisits} onChange={v => setFormData({...formData, offlineVisits: v})} />
-              </div>
-            </FormSection>
+          {/* Metrics Grid */}
+          <div className="grid md:grid-cols-2 gap-12">
+            <MetricSection title="Aktivitas Pemustaka" icon="👥">
+              <StepperInput label="Kunjungan Online" value={formData.onlineVisits} onChange={v => setFormData({...formData, onlineVisits: v})} />
+              <StepperInput label="Kunjungan Offline" value={formData.offlineVisits} onChange={v => setFormData({...formData, offlineVisits: v})} />
+            </MetricSection>
 
-            <FormSection title="Koleksi & Repository" icon="📦" color="text-emerald-600">
-              <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                <InputField label="Koleksi Baru" value={formData.collectionsAdded} onChange={v => setFormData({...formData, collectionsAdded: v})} />
-                <InputField label="Visit Repository" value={formData.repoVisits} onChange={v => setFormData({...formData, repoVisits: v})} />
-                <InputField label="Total Downloads" value={formData.repoDownloads} onChange={v => setFormData({...formData, repoDownloads: v})} />
-              </div>
-            </FormSection>
+            <MetricSection title="Layanan Digital" icon="💾">
+              <StepperInput label="Visit Repository" value={formData.repoVisits} onChange={v => setFormData({...formData, repoVisits: v})} />
+              <StepperInput label="Total Downloads" value={formData.repoDownloads} onChange={v => setFormData({...formData, repoDownloads: v})} />
+            </MetricSection>
           </div>
 
-          <button type="submit" className="w-full py-5 bg-emerald-600 text-white font-black rounded-2xl hover:bg-emerald-700 hover:-translate-y-1 shadow-xl shadow-emerald-100 transition-all duration-300">
-            Simpan Laporan Sekarang
+          <div className="pt-6 border-t border-slate-100 dark:border-white/5">
+            <StepperInput label="Penambahan Koleksi Baru (Judul)" value={formData.collectionsAdded} onChange={v => setFormData({...formData, collectionsAdded: v})} fullWidth />
+          </div>
+
+          <button type="submit" className="group w-full py-6 bg-emerald-600 text-white font-black rounded-[2rem] hover:bg-emerald-700 hover:-translate-y-1 active:scale-95 shadow-2xl shadow-emerald-900/20 transition-all duration-300 flex items-center justify-center space-x-3 uppercase tracking-widest text-sm">
+            <span>💾 Simpan Laporan Periode</span>
+            <span className="opacity-0 group-hover:opacity-100 transition-opacity">→</span>
           </button>
-          
-          {message && (
-            <div className="text-center py-4 bg-emerald-50 text-emerald-700 rounded-2xl font-bold animate-pulse">
-              {message}
-            </div>
-          )}
         </form>
       </div>
     </div>
   );
 };
 
-const FormSection: React.FC<{ title: string; icon: string; color: string; children: React.ReactNode }> = ({ title, icon, color, children }) => (
+const MetricSection: React.FC<{ title: string; icon: string; children: React.ReactNode }> = ({ title, icon, children }) => (
   <div className="space-y-6">
-    <div className="flex items-center space-x-3">
+    <div className="flex items-center space-x-3 pb-2 border-b border-slate-100 dark:border-white/5">
       <span className="text-xl">{icon}</span>
-      <h3 className={`text-sm font-black uppercase tracking-widest ${color}`}>{title}</h3>
+      <h3 className="text-xs font-black uppercase tracking-widest text-slate-400">{title}</h3>
     </div>
-    {children}
+    <div className="space-y-6">{children}</div>
   </div>
 );
 
-const InputField: React.FC<{ label: string; value: number; onChange: (v: number) => void }> = ({ label, value, onChange }) => (
-  <div className="space-y-2">
-    <label className="text-[10px] font-bold text-slate-400 uppercase tracking-tighter ml-1">{label}</label>
-    <input 
-      type="number" 
-      required 
-      value={value} 
-      onChange={e => onChange(parseInt(e.target.value) || 0)} 
-      className="w-full px-5 py-3.5 border border-slate-200 rounded-2xl outline-none focus:ring-4 focus:ring-slate-500/5 focus:border-slate-400 transition-all font-bold text-slate-700"
-    />
+const StepperInput: React.FC<{ label: string; value: number; onChange: (v: number) => void; fullWidth?: boolean }> = ({ label, value, onChange, fullWidth }) => (
+  <div className={`space-y-3 ${fullWidth ? 'max-w-md mx-auto' : ''}`}>
+    <label className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest ml-1">{label}</label>
+    <div className="flex items-center bg-slate-100 dark:bg-slate-800 rounded-2xl p-1 border border-slate-200 dark:border-white/5 shadow-inner">
+      <button 
+        type="button"
+        onClick={() => onChange(Math.max(0, value - 1))}
+        className="w-12 h-12 flex items-center justify-center bg-white dark:bg-slate-700 rounded-xl shadow-sm text-slate-600 dark:text-white hover:bg-rose-50 hover:text-rose-600 transition-colors"
+      >
+        −
+      </button>
+      <input 
+        type="number" 
+        value={value} 
+        onChange={e => onChange(parseInt(e.target.value) || 0)} 
+        className="flex-1 bg-transparent border-none outline-none text-center font-black text-slate-800 dark:text-white text-lg"
+      />
+      <button 
+        type="button"
+        onClick={() => onChange(value + 1)}
+        className="w-12 h-12 flex items-center justify-center bg-white dark:bg-slate-700 rounded-xl shadow-sm text-slate-600 dark:text-white hover:bg-emerald-50 hover:text-emerald-600 transition-colors"
+      >
+        +
+      </button>
+    </div>
   </div>
 );

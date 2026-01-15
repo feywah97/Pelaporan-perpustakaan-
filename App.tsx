@@ -10,12 +10,13 @@ import { AdminStatsInput } from './pages/admin/AdminStatsInput';
 import { AdminRequests } from './pages/admin/AdminRequests';
 import { AdminFeedback } from './pages/admin/AdminFeedback';
 import { EmailSimulationModal } from './components/EmailSimulationModal';
-import { ServiceStats, CollectionRequest, UserFeedback, EmailSimulation } from './types';
+import { ServiceStats, CollectionRequest, UserFeedback, EmailSimulation, ToastMessage } from './types';
 
 const App: React.FC = () => {
   const [currentPage, setCurrentPage] = useState<string>('home');
   const [isAdmin, setIsAdmin] = useState<boolean>(false);
   const [activeNotification, setActiveNotification] = useState<EmailSimulation | null>(null);
+  const [toasts, setToasts] = useState<ToastMessage[]>([]);
   
   const [theme, setTheme] = useState<'light' | 'dark'>(() => {
     const saved = localStorage.getItem('app_theme');
@@ -31,7 +32,13 @@ const App: React.FC = () => {
     }
   }, [theme]);
 
-  const toggleTheme = () => setTheme(prev => prev === 'light' ? 'dark' : 'light');
+  const showToast = (message: string, type: 'success' | 'error' | 'info' = 'success') => {
+    const id = Math.random().toString(36).substr(2, 9);
+    setToasts(prev => [...prev, { id, message, type }]);
+    setTimeout(() => {
+      setToasts(prev => prev.filter(t => t.id !== id));
+    }, 4000);
+  };
 
   const [stats, setStats] = useState<ServiceStats[]>(() => {
     const saved = localStorage.getItem('library_stats');
@@ -60,24 +67,20 @@ const App: React.FC = () => {
     localStorage.setItem('library_feedbacks', JSON.stringify(feedbacks));
   }, [feedbacks]);
 
-  const navigate = (page: string) => {
-    setCurrentPage(page);
-    window.scrollTo(0, 0);
-  };
-
   const handleUpdateRequestStatus = (id: string, status: 'approved' | 'rejected') => {
     const request = requests.find(r => r.id === id);
     if (!request) return;
 
     setRequests(requests.map(r => r.id === id ? { ...r, status } : r));
+    showToast(`Status pengajuan "${request.title}" diperbarui.`, 'info');
 
     const simulation: EmailSimulation = {
       to: request.email || 'pemustaka@example.com',
       subject: `Update Pengajuan Koleksi: ${request.title}`,
       type: status,
       body: status === 'approved' 
-        ? `Halo ${request.email.split('@')[0]},\n\nKabar gembira! Pengajuan koleksi Anda untuk judul "${request.title}" telah DISETUJUI oleh tim pustakawan.\n\nKoleksi ini akan segera kami proses untuk pengadaan. Terima kasih telah berkontribusi dalam pengayaan koleksi perpustakaan kami.`
-        : `Halo ${request.email.split('@')[0]},\n\nKami telah meninjau pengajuan koleksi Anda untuk judul "${request.title}".\n\nMohon maaf, saat ini pengajuan tersebut BELUM DAPAT KAMI PROSES karena keterbatasan anggaran atau kesesuaian dengan kebijakan koleksi saat ini.\n\nTetap berikan saran koleksi lainnya di masa mendatang.`
+        ? `Halo,\n\nKabar gembira! Pengajuan koleksi Anda untuk judul "${request.title}" telah DISETUJUI.\n\nTim kami akan segera memproses pengadaannya.`
+        : `Halo,\n\nMohon maaf, pengajuan untuk "${request.title}" belum dapat kami setujui saat ini karena kebijakan koleksi.`
     };
 
     setActiveNotification(simulation);
@@ -86,38 +89,48 @@ const App: React.FC = () => {
   const renderContent = () => {
     switch (currentPage) {
       case 'home':
-        return <Home onNavigate={navigate} />;
+        return <Home onNavigate={setCurrentPage} stats={stats} />;
       case 'service-report':
         return <ServiceReport stats={stats} isDark={theme === 'dark'} />;
       case 'form-koleksi':
-        return <CollectionForm onSubmit={(data) => setRequests([...requests, data])} onBack={() => navigate('home')} />;
+        return <CollectionForm onSubmit={(data) => {
+          setRequests([...requests, data]);
+          showToast("Pengajuan koleksi berhasil dikirim!");
+        }} onBack={() => setCurrentPage('home')} />;
       case 'form-saran':
-        return <FeedbackForm onSubmit={(data) => setFeedbacks([...feedbacks, data])} onBack={() => navigate('home')} />;
+        return <FeedbackForm onSubmit={(data) => {
+          setFeedbacks([...feedbacks, data]);
+          showToast("Terima kasih atas saran Anda!");
+        }} onBack={() => setCurrentPage('home')} />;
       case 'admin-dashboard':
         return <AdminDashboard stats={stats} requests={requests} feedbacks={feedbacks} isDark={theme === 'dark'} />;
       case 'admin-stats':
-        return <AdminStatsInput onSubmit={(data) => setStats([...stats, data])} />;
+        return <AdminStatsInput onSubmit={(data) => {
+          setStats([...stats, data]);
+          showToast("Data statistik periode berhasil disimpan!");
+        }} />;
       case 'admin-requests':
         return <AdminRequests requests={requests} onUpdate={handleUpdateRequestStatus} />;
       case 'admin-feedback':
         return <AdminFeedback feedbacks={feedbacks} />;
       default:
-        return <Home onNavigate={navigate} />;
+        return <Home onNavigate={setCurrentPage} stats={stats} />;
     }
   };
 
   return (
     <Layout 
       currentPage={currentPage} 
-      onNavigate={navigate} 
+      onNavigate={setCurrentPage} 
       isAdmin={isAdmin} 
       onToggleAdmin={() => {
         setIsAdmin(!isAdmin);
-        if (!isAdmin) navigate('admin-dashboard');
-        else navigate('home');
+        setCurrentPage(isAdmin ? 'home' : 'admin-dashboard');
       }}
       theme={theme}
-      onToggleTheme={toggleTheme}
+      onToggleTheme={() => setTheme(t => t === 'light' ? 'dark' : 'light')}
+      toasts={toasts}
+      onCloseToast={(id) => setToasts(prev => prev.filter(t => t.id !== id))}
     >
       {renderContent()}
       <EmailSimulationModal 

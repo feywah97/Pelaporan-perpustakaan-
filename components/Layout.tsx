@@ -1,5 +1,6 @@
 
 import React from 'react';
+import { ToastMessage } from '../types';
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -9,6 +10,8 @@ interface LayoutProps {
   onToggleAdmin: () => void;
   theme: 'light' | 'dark';
   onToggleTheme: () => void;
+  toasts: ToastMessage[];
+  onCloseToast: (id: string) => void;
 }
 
 export const Layout: React.FC<LayoutProps> = ({ 
@@ -18,15 +21,38 @@ export const Layout: React.FC<LayoutProps> = ({
   isAdmin, 
   onToggleAdmin,
   theme,
-  onToggleTheme
+  onToggleTheme,
+  toasts,
+  onCloseToast
 }) => {
   return (
-    <div className="min-h-screen flex flex-col md:flex-row transition-colors duration-300 bg-[#f8fafc] dark:bg-slate-950 text-slate-900 dark:text-slate-100">
-      {/* Sidebar - Brand Identity Emerald */}
-      <aside className="w-full md:w-72 bg-[#064e3b] dark:bg-[#022c22] text-white shrink-0 flex flex-col shadow-xl z-20">
-        <div className="p-8 flex flex-col items-center border-b border-emerald-800/30">
-          <div className="relative mb-6">
-            <div className="w-24 h-24 bg-white rounded-3xl p-3 shadow-lg flex items-center justify-center rotate-3 hover:rotate-0 transition-transform duration-500">
+    <div className="min-h-screen flex flex-col md:flex-row transition-colors duration-500 bg-[#f8fafc] dark:bg-slate-950 text-slate-900 dark:text-slate-100 overflow-hidden">
+      {/* Toast Container */}
+      <div className="fixed top-6 right-6 z-[200] space-y-3 pointer-events-none">
+        {toasts.map(toast => (
+          <div 
+            key={toast.id}
+            className={`pointer-events-auto flex items-center p-4 rounded-2xl shadow-2xl border min-w-[300px] animate-in slide-in-from-right-10 duration-300 ${
+              toast.type === 'success' ? 'bg-emerald-600 border-emerald-500 text-white' :
+              toast.type === 'error' ? 'bg-rose-600 border-rose-500 text-white' :
+              'bg-slate-800 border-slate-700 text-white'
+            }`}
+          >
+            <span className="mr-3 text-lg">
+              {toast.type === 'success' ? '✅' : toast.type === 'error' ? '⚠️' : 'ℹ️'}
+            </span>
+            <p className="text-sm font-bold flex-1">{toast.message}</p>
+            <button onClick={() => onCloseToast(toast.id)} className="ml-4 opacity-50 hover:opacity-100">✕</button>
+          </div>
+        ))}
+      </div>
+
+      {/* Sidebar */}
+      <aside className="w-full md:w-72 bg-[#064e3b] dark:bg-slate-900 text-white shrink-0 flex flex-col shadow-2xl z-20 relative border-r border-white/5">
+        <div className="p-8 flex flex-col items-center border-b border-white/5">
+          <div className="relative mb-6 group">
+            <div className="absolute -inset-1 bg-amber-400 rounded-[2rem] blur opacity-25 group-hover:opacity-50 transition duration-1000"></div>
+            <div className="relative w-24 h-24 bg-white rounded-3xl p-3 shadow-xl flex items-center justify-center transform group-hover:rotate-12 transition-transform duration-500">
               <img 
                 src="logo.png" 
                 alt="Logo" 
@@ -37,12 +63,9 @@ export const Layout: React.FC<LayoutProps> = ({
               />
             </div>
           </div>
-          
           <div className="text-center">
             <h1 className="text-2xl font-black tracking-tight text-amber-400">SIPELAP</h1>
-            <p className="text-[10px] font-bold text-emerald-200 uppercase tracking-[0.2em] mt-1 opacity-70">
-              UPT Perpustakaan
-            </p>
+            <p className="text-[10px] font-bold text-emerald-200/60 uppercase tracking-[0.3em] mt-1">UPT Perpustakaan</p>
           </div>
         </div>
         
@@ -56,7 +79,7 @@ export const Layout: React.FC<LayoutProps> = ({
             </>
           ) : (
             <>
-              <div className="px-5 py-3 text-[10px] font-bold text-emerald-400 uppercase tracking-widest opacity-50">Manajemen Admin</div>
+              <div className="px-5 py-3 text-[10px] font-bold text-amber-400/50 uppercase tracking-widest">Workspace Admin</div>
               <NavItem active={currentPage === 'admin-dashboard'} onClick={() => onNavigate('admin-dashboard')} label="Dashboard" icon="📊" />
               <NavItem active={currentPage === 'admin-stats'} onClick={() => onNavigate('admin-stats')} label="Input Layanan" icon="➕" />
               <NavItem active={currentPage === 'admin-requests'} onClick={() => onNavigate('admin-requests')} label="Data Pengajuan" icon="📁" />
@@ -65,49 +88,55 @@ export const Layout: React.FC<LayoutProps> = ({
           )}
         </nav>
 
-        <div className="p-6 bg-emerald-950/30 space-y-3">
+        <div className="p-6 bg-black/10">
           <button 
             onClick={onToggleAdmin}
-            className={`w-full flex items-center justify-center space-x-3 py-3 rounded-2xl transition-all duration-300 font-bold text-sm ${
+            className={`w-full flex items-center justify-center space-x-3 py-3.5 rounded-2xl transition-all duration-300 font-black text-xs uppercase tracking-widest ${
               isAdmin 
-                ? 'bg-emerald-800/40 hover:bg-emerald-700 text-white border border-emerald-700/50' 
-                : 'bg-amber-400 hover:bg-amber-50 text-emerald-950 shadow-lg shadow-amber-900/20'
+                ? 'bg-slate-800 hover:bg-slate-700 text-white border border-white/10' 
+                : 'bg-amber-400 hover:bg-amber-300 text-emerald-950 shadow-xl shadow-amber-900/40'
             }`}
           >
-            <span>{isAdmin ? '👤 Mode Pemustaka' : '🛡️ Mode Admin'}</span>
+            <span>{isAdmin ? '🛡️ Keluar Admin' : '👤 Akses Admin'}</span>
           </button>
         </div>
       </aside>
 
-      {/* Main Content Area */}
-      <main className="flex-1 overflow-y-auto">
-        <header className="bg-white/70 dark:bg-slate-900/80 backdrop-blur-md border-b border-slate-200 dark:border-slate-800 px-8 py-5 flex items-center justify-between sticky top-0 z-10">
-          <div className="flex items-center space-x-3">
-            <div className="w-1.5 h-6 bg-amber-400 rounded-full"></div>
-            <h2 className="text-lg font-bold text-slate-800 dark:text-slate-100 capitalize">
-              {currentPage.replace('admin-', '').replace('-', ' ')}
-            </h2>
+      {/* Main Content */}
+      <main className="flex-1 flex flex-col min-h-0 bg-slate-50 dark:bg-slate-950 transition-colors duration-500">
+        <header className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border-b border-slate-200 dark:border-white/5 px-8 py-4 flex items-center justify-between sticky top-0 z-10">
+          <div className="flex items-center space-x-4">
+            <div className="relative flex h-3 w-3">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+              <span className="relative inline-flex rounded-full h-3 w-3 bg-emerald-500"></span>
+            </div>
+            <div>
+              <h2 className="text-sm font-black text-slate-800 dark:text-white uppercase tracking-tight">
+                {currentPage.split('-').join(' ')}
+              </h2>
+              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Layanan Aktif</p>
+            </div>
           </div>
           
-          <div className="flex items-center space-x-4">
+          <div className="flex items-center space-x-3">
             <button 
               onClick={onToggleTheme}
-              className="p-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-amber-400 border border-slate-200 dark:border-slate-700 transition-all hover:scale-110 active:scale-95"
-              title={theme === 'light' ? 'Ganti ke Dark Mode' : 'Ganti ke Bright Mode'}
+              className="p-3 rounded-2xl bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-amber-400 transition-all hover:scale-110 active:scale-95 border border-transparent dark:border-white/5"
             >
               {theme === 'light' ? '🌙' : '☀️'}
             </button>
-
-             <div className="hidden lg:flex flex-col text-right">
-               <span className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-tighter">BBPP Lembang</span>
-             </div>
-             <div className="text-xs font-bold text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-900/20 px-4 py-2 rounded-xl border border-emerald-100 dark:border-emerald-800/50">
-               {new Date().toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long' })}
-             </div>
+            <div className="h-10 w-px bg-slate-200 dark:bg-white/5 mx-2"></div>
+            <div className="hidden lg:block text-right">
+              <p className="text-[10px] font-black text-slate-400 uppercase leading-none mb-1">BBPP LEMBANG</p>
+              <p className="text-xs font-bold text-emerald-600 dark:text-emerald-400">{new Date().toLocaleDateString('id-ID', { month: 'long', year: 'numeric' })}</p>
+            </div>
           </div>
         </header>
-        <div className="p-8 lg:p-12 max-w-7xl mx-auto">
-          {children}
+
+        <div className="flex-1 overflow-y-auto custom-scrollbar">
+          <div className="p-8 lg:p-12 max-w-7xl mx-auto min-h-full">
+            {children}
+          </div>
         </div>
       </main>
     </div>
@@ -117,13 +146,14 @@ export const Layout: React.FC<LayoutProps> = ({
 const NavItem: React.FC<{ active: boolean; onClick: () => void; label: string; icon: string }> = ({ active, onClick, label, icon }) => (
   <button
     onClick={onClick}
-    className={`w-full flex items-center space-x-4 px-5 py-3.5 rounded-2xl transition-all duration-300 group ${
+    className={`w-full flex items-center space-x-4 px-5 py-3.5 rounded-2xl transition-all duration-300 group relative ${
       active 
-        ? 'bg-amber-400 text-emerald-950 shadow-md font-bold' 
-        : 'text-emerald-100/70 hover:bg-white/5 hover:text-white'
+        ? 'bg-amber-400 text-emerald-950 font-black shadow-lg shadow-amber-900/20' 
+        : 'text-white/60 hover:bg-white/5 hover:text-white'
     }`}
   >
-    <span className="text-xl">{icon}</span>
-    <span className="text-sm tracking-tight">{label}</span>
+    {active && <span className="absolute left-2 w-1 h-4 bg-emerald-900 rounded-full"></span>}
+    <span className="text-xl group-hover:scale-125 transition-transform">{icon}</span>
+    <span className="text-xs uppercase tracking-widest">{label}</span>
   </button>
 );
